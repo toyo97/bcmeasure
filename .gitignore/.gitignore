@@ -1,0 +1,5 @@
+# IdeaProject conf files
+.idea/
+
+# XML conf files
+*.xml

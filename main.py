@@ -1,31 +1,41 @@
 from __future__ import with_statement, print_function
-import csv
 import os
-from ij import IJ, ImagePlus
-from ij.gui import PointRoi
+from ij import IJ, ImagePlus, ImageJ
 
-source_path = '/home/zemp/IdeaProjects/bcmeasure/input/'
+import markers as mrk
 
-for filename in os.listdir(source_path):
-    if filename.endswith(".tif"):
-        file_path = os.path.join(source_path, filename)
+from stacks import CellStack
+
+# inputs
+source_dir = '/home/zemp/IdeaProjects/bcmeasure/input/'
+n_preview = 5
+cube_roi_dim = 40  # dim of cube as region of interest (ROI) around every cell center
+
+# start ImageJ program
+ImageJ()
+
+IJ.log('Start')
+for filename in os.listdir(source_dir):
+    if filename.endswith('.tif'):
+
+        # open image
+        file_path = os.path.join(source_dir, filename)
         imp = IJ.openImage(file_path)
+        imp.show()
         stack = imp.getImageStack()
+
+        # read relative csv file rows (coordinates of centers)
+        marker_path = file_path.replace('.tif', '.csv')
+        markers = mrk.read_marker(marker_path, to_int=True)
+
+        cells_vstacks = []
+        # for each marker append the virtual stack crop of the cell to cells_vstacks
+        for xc, yc, zc in markers:
+            cells_vstacks.append(CellStack(stack, xc, yc, zc, cube_roi_dim))
+
+        # show the virtual stacks of the first image
+        IJ.log('Showing first {} cells'.format(n_preview))
+        for cs in cells_vstacks[:n_preview]:
+            ImagePlus('Cell at {}'.format(cs.get_center()), cs).show()
         break
 
-
-roi = PointRoi(0, 0)
-with open('{0}.marker'.format(file_path.replace('.tif', '-GT.tif')), 'r') as csvfile:
-
-    reader = csv.reader(csvfile, delimiter=',', quotechar="\"")
-    header = reader.next()
-    for i in range(10):
-        reader.next()
-    next_line = reader.next()
-    x, y, z = next_line[:3]
-    print(x, y, z)
-    imp2 = ImagePlus('First point', stack.getProcessor(int(z)))
-    roi.addPoint(imp2, float(x), float(y))
-
-imp2.show()
-imp2.setRoi(roi)

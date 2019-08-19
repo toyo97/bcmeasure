@@ -1,0 +1,6 @@
+# Project files
+/.idea
+bcmeasure.iml
+
+# Java classes created by Jython (redundant)
+*.class

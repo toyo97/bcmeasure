@@ -1,4 +1,4 @@
-from ij import VirtualStack, ImageStack
+from ij import VirtualStack, ImageStack, IJ
 from ij.gui import Roi
 
 
@@ -26,6 +26,15 @@ Calculate the starting slice and the size of the stack
     return z0, z1 - z0 + 1
 
 
+def get_cells_vstacks(stack, markers, cube_dim, voxel_depth=1.0):
+    cells_vstacks = []
+    # for each marker append the virtual stack crop of the cell to cells_vstacks
+    for xc, yc, zc in markers:
+        IJ.log('Processing cell at {},{},{} ...'.format(xc, yc, zc))
+        cells_vstacks.append(CellStack(stack, xc, yc, zc, cube_dim, voxel_depth))
+    return cells_vstacks
+
+
 class CellStack(VirtualStack):
     def __init__(self, stack, xc, yc, zc, dim, voxel_depth=1):
         # type: (ImageStack, int, int, int, int, float) -> CellStack
@@ -39,8 +48,14 @@ Constructor of the VirtualStack pointing to the cell at the given coordinates
         """
         self.z_start, size = calculate_slices(stack, zc, dim*voxel_depth)
         self.cell_roi = square_roi(xc, yc, dim)
-        width = int(self.cell_roi.getFloatWidth())
-        height = int(self.cell_roi.getFloatHeight())
+
+        # set width and height according to actual roi crop (which may differ from cell_roi dimensions)
+        ip = stack.getProcessor(1)
+        ip.setRoi(self.cell_roi)
+        crop = ip.crop()
+        width = crop.getWidth()
+        height = crop.getHeight()
+
         super(VirtualStack, self).__init__(width, height, size)
 
         self.stack = stack
@@ -53,7 +68,8 @@ Constructor of the VirtualStack pointing to the cell at the given coordinates
         z = self.z_index(n)
         ip = self.stack.getProcessor(z)
         ip.setRoi(self.cell_roi)
-        return ip.crop()
+        crop = ip.crop()
+        return crop
 
     def z_index(self, n):
         """
@@ -68,3 +84,15 @@ Cell center coordinates
         :return: list of 3D coords
         """
         return [self.xc, self.yc, self.zc]
+
+# TODO check if normal stack crop instead of vstack is necessary
+# def cell_substack(stack, xc, yc, zc, dim, voxel_depth):
+#     x0 = xc - int(dim/2)
+#     y0 = yc - int(dim/2)
+#     z0 = zc - int(dim*voxel_depth/2)
+#
+#     x1 = x0 + dim
+#     y1 = y0 + dim
+#     z1 = z0 + dim*voxel_depth
+## insert rest of code here!
+#     return stack.crop(x, y, z, width, height, depth)

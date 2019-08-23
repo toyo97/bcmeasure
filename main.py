@@ -3,14 +3,20 @@ import os
 from ij import IJ, ImagePlus, ImageJ
 
 import markers as mrk
+from stacks import get_cells_vstacks
+from filters import gaussian_blur_3d
 
-from stacks import CellStack
 
 # inputs
 source_dir = '/home/zemp/bcfind_GT'
 n_preview = 3
 cube_roi_dim = 70  # dim of cube as region of interest (ROI) around every cell center
 voxel_depth = 0.4  # approx proportion with xy axis
+
+# gauss filter params
+# TODO try using voxel_depth parameter to set zsigma based on xysigma
+xysigma = 2
+zsigma = 1
 
 # start ImageJ program
 ImageJ()
@@ -36,16 +42,13 @@ def process_marked_imgs(root, filename):
 
     markers = mrk.read_marker(marker_path, to_int=True)
 
-    cells_vstacks = []
-    # for each marker append the virtual stack crop of the cell to cells_vstacks
-    for xc, yc, zc in markers:
-        IJ.log('Processing cell at {},{},{} ...'.format(xc, yc, zc))
-        cells_vstacks.append(CellStack(stack, xc, yc, zc, cube_roi_dim, voxel_depth))
+    cells_vstacks = get_cells_vstacks(stack, markers, cube_roi_dim, voxel_depth)
 
     # show the virtual stacks of the first image
     IJ.log('Showing first {} cells'.format(n_preview))
     for cs in cells_vstacks[:n_preview]:
         ImagePlus('Cell at {}'.format(cs.get_center()), cs).show()
+        gauss_stack = gaussian_blur_3d(cs, xysigma, zsigma)
 
 
 for root, directories, filenames in os.walk(source_dir):

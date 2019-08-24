@@ -3,9 +3,14 @@ from ij.gui import Roi
 
 
 def square_roi(xc, yc, dim):
-    x = xc - int(dim/2)
-    y = yc - int(dim/2)
-    # Roi corrects itself when out of borders
+    # type: (int, int, int) -> Roi
+    """
+Generate the square (2D) ij.gui.Roi centered in (xc,yc) with given side size
+NOTE: It can go out of the original image border!
+    """
+    x = xc - int(dim / 2)
+    y = yc - int(dim / 2)
+    # Roi corrects itself if out of borders when set on image
     return Roi(x, y, dim, dim)
 
 
@@ -46,7 +51,7 @@ Constructor of the VirtualStack pointing to the cell at the given coordinates
         :param zc: Z coord of the cell center
         :param dim: Dimension of the cube roi around the cell
         """
-        self.z_start, size = calculate_slices(stack, zc, dim*voxel_depth)
+        self.z_start, size = calculate_slices(stack, zc, int(dim * voxel_depth))
         self.cell_roi = square_roi(xc, yc, dim)
 
         # set width and height according to actual roi crop (which may differ from cell_roi dimensions)
@@ -55,6 +60,12 @@ Constructor of the VirtualStack pointing to the cell at the given coordinates
         crop = ip.crop()
         width = crop.getWidth()
         height = crop.getHeight()
+
+        # attribute to identify cells on image borders
+        if width != dim or height != dim or size != int(dim * voxel_depth):
+            self.onBorder = True
+        else:
+            self.onBorder = False
 
         super(VirtualStack, self).__init__(width, height, size)
 

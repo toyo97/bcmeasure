@@ -16,7 +16,7 @@ import os
 from ij import IJ, ImagePlus, ImageJ
 
 import markers as mrk
-from stacks import get_cells_vstacks
+from stacks import get_cells_vstacks, gen_cell_stacks
 from filters import gaussianIJ
 
 # inputs
@@ -54,13 +54,18 @@ def process_marked_imgs(root, filename):
 
     markers = mrk.read_marker(marker_path, to_int=True)
 
-    cells_vstacks = get_cells_vstacks(stack, markers, cube_roi_dim, voxel_depth)
+    # cells_vstacks = get_cells_vstacks(stack, markers, cube_roi_dim, voxel_depth)
+    #
+    # # show the virtual stacks of the first image
+    # IJ.log('Showing first {} cells'.format(n_preview))
+    # for cs in cells_vstacks[:n_preview]:
+    #     ImagePlus('Cell at {}'.format(cs.get_center()), cs).show()
+    #     gauss_stack = gaussianIJ(cs, xysigma, zsigma)
 
-    # show the virtual stacks of the first image
     IJ.log('Showing first {} cells'.format(n_preview))
-    for cs in cells_vstacks[:n_preview]:
-        ImagePlus('Cell at {}'.format(cs.get_center()), cs).show()
-        gauss_stack = gaussianIJ(cs, xysigma, zsigma)
+    for cs in gen_cell_stacks(imp, markers, cube_roi_dim, voxel_depth):
+        cs.show()
+        gauss_stack = gaussianIJ(cs.getImageStack(), xysigma, zsigma)
 
 
 for root, directories, filenames in os.walk(source_dir):

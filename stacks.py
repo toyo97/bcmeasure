@@ -1,4 +1,4 @@
-from ij import VirtualStack, ImageStack, IJ
+from ij import VirtualStack, ImageStack, IJ, ImagePlus
 from ij.gui import Roi
 
 
@@ -36,13 +36,13 @@ def get_cells_vstacks(stack, markers, cube_dim, voxel_depth=1.0):
     # for each marker append the virtual stack crop of the cell to cells_vstacks
     for xc, yc, zc in markers:
         IJ.log('Processing cell at {},{},{} ...'.format(xc, yc, zc))
-        cells_vstacks.append(CellStack(stack, xc, yc, zc, cube_dim, voxel_depth))
+        cells_vstacks.append(CellVirtualStack(stack, xc, yc, zc, cube_dim, voxel_depth))
     return cells_vstacks
 
 
-class CellStack(VirtualStack):
+class CellVirtualStack(VirtualStack):
     def __init__(self, stack, xc, yc, zc, dim, voxel_depth=1):
-        # type: (ImageStack, int, int, int, int, float) -> CellStack
+        # type: (ImageStack, int, int, int, int, float) -> CellVirtualStack
         """
 Constructor of the VirtualStack pointing to the cell at the given coordinates
         :param stack: ij.ImageStack, Stack of the original image
@@ -96,14 +96,91 @@ Cell center coordinates
         """
         return [self.xc, self.yc, self.zc]
 
-# TODO check if normal stack crop instead of vstack is necessary
-# def cell_substack(stack, xc, yc, zc, dim, voxel_depth):
-#     x0 = xc - int(dim/2)
-#     y0 = yc - int(dim/2)
-#     z0 = zc - int(dim*voxel_depth/2)
-#
-#     x1 = x0 + dim
-#     y1 = y0 + dim
-#     z1 = z0 + dim*voxel_depth
-## insert rest of code here!
-#     return stack.crop(x, y, z, width, height, depth)
+
+# *** Non-Virtual CellStack ***
+
+def gen_cell_stacks(imp, markers, cube_dim, voxel_depth=1.0):
+    for pos in markers:
+        yield CellStack(imp, pos[0], pos[1], pos[2], cube_dim, voxel_depth)
+
+
+def relative_center(xc, yc, zc, roi_3D):
+    # type: (int, int, int, dict) -> list
+    """
+Calculate the center of the cell relatively to its roi
+    :param roi_3D: region of interest of the cell obtained with dump_3DRoi()
+    :return: 3D coordinates
+    """
+    return [xc - roi_3D['x0'], yc - roi_3D['y0'], zc - roi_3D['z0']]
+
+
+def dump_3DRoi(imp, xc, yc, zc, dim, voxel_depth):
+    # type: (ImagePlus, int, int, int, int, float) -> dict
+    """
+Create a dict for rapid access to stack dimensions
+    :param imp: i
+    :param xc:
+    :param yc:
+    :param zc:
+    :param dim:
+    :param voxel_depth: depth of a voxel (1 if image is isotropic)
+    :return: dict, key values are: x0, y0, z0, width, height depth
+    """
+    x0 = xc - int(dim / 2)
+    y0 = yc - int(dim / 2)
+    z0 = zc - int(dim*voxel_depth / 2)
+
+    x0 = x0 if x0 >= 0 else 0
+    y0 = y0 if y0 >= 0 else 0
+    z0 = z0 if z0 >= 0 else 0
+
+    # Returns the dimensions of this image (width, height, nChannels, nSlices, nFrames) as a 5 element int array
+    dimensions = imp.getDimensions()
+    imp_width = dimensions[0]
+    imp_height = dimensions[1]
+    imp_depth = dimensions[3]
+
+    w = dim if x0 + dim - 1 < imp_width else imp_width - x0
+    h = dim if y0 + dim - 1 < imp_height else imp_height - y0
+    d = int(dim*voxel_depth) if z0 + int(dim*voxel_depth) - 1 < imp_depth else imp_depth - z0
+    # z0 is the z coordinate, NOT the slice (slices go from 1 to stack size)
+
+    roi = {
+        'x0': x0,
+        'y0': y0,
+        'z0': z0,
+        'width': w,
+        'height': h,
+        'depth': d
+    }
+    return roi
+
+
+class CellStack(ImagePlus):
+    def __init__(self, imp, xc, yc, zc, dim, voxel_depth=1.):
+        # type: (ImagePlus, int, int, int, int, float) -> CellStack
+        self.seed = [xc, yc, zc]
+        self.roi3D = dump_3DRoi(imp, xc, yc, zc, dim, voxel_depth)
+        self.center = relative_center(xc, yc, zc, self.roi3D)
+
+        title = 'Cell in ' + str(self.seed)
+        stack = imp.getImageStack().crop(self.roi3D['x0'],
+                                         self.roi3D['y0'],
+                                         self.roi3D['z0'],
+                                         self.roi3D['width'],
+                                         self.roi3D['height'],
+                                         self.roi3D['depth'])
+        super(ImagePlus, self).__init__(title, stack)
+
+
+
+
+
+
+
+
+
+
+
+
+

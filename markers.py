@@ -40,7 +40,7 @@ Read a marker file (any extension) and return the feature of interests (x, y, z)
                     row = row[:3]
                 rows.append(row)
             except IndexError as e:
-                IJ.log('ERROR '+str(e)+' in file '+marker_path)
+                IJ.log('ERROR ' + str(e) + ' in file ' + marker_path)
 
         IJ.log('Read {} rows from {}'.format(len(rows), marker_path))
     return rows
@@ -64,15 +64,13 @@ Convert *.marker files in *.csv extracting only the features of interest (i.e. x
     # look for *.marker files
     for filename in os.listdir(source_dir):
         if filename.endswith('.marker'):
-
             marker_path = os.path.join(source_dir, filename)
             header = ['x', 'y', 'z']
             rows = read_marker(marker_path, y_inv_height=y_inv_height)
             img_path = marker_path.replace('.marker', '')
             img_name, img_extension = os.path.splitext(img_path)
-            csv_path = (img_name+'.csv').replace(source_dir, target_dir)
+            csv_path = (img_name + '.csv').replace(source_dir, target_dir)
             with open(csv_path, 'w') as csv_file:
-
                 IJ.log('Writing {} rows on {}...'.format(len(rows), csv_path))
 
                 writer = csv.writer(csv_file)
@@ -80,6 +78,6 @@ Convert *.marker files in *.csv extracting only the features of interest (i.e. x
                 writer.writerows(rows)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     source_dir = '/home/zemp/IdeaProjects/bcmeasure/input/'
     markers_to_csv(source_dir, y_inv_height=150)

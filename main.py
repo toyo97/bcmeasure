@@ -1,11 +1,23 @@
+"""
+Author: Vittorio Zampinetti
+
+***Main script***
+    Still in testing phase
+
+TODOs:
+-Remember to check these functions
+    IJ.message()
+    imp.getCalibration()/setCalibration()
+
+"""
+
 from __future__ import with_statement, print_function
 import os
 from ij import IJ, ImagePlus, ImageJ
 
 import markers as mrk
 from stacks import get_cells_vstacks
-from filters import gaussian_blur_3d
-
+from filters import gaussianIJ
 
 # inputs
 source_dir = '/home/zemp/bcfind_GT'
@@ -48,7 +60,7 @@ def process_marked_imgs(root, filename):
     IJ.log('Showing first {} cells'.format(n_preview))
     for cs in cells_vstacks[:n_preview]:
         ImagePlus('Cell at {}'.format(cs.get_center()), cs).show()
-        gauss_stack = gaussian_blur_3d(cs, xysigma, zsigma)
+        gauss_stack = gaussianIJ(cs, xysigma, zsigma)
 
 
 for root, directories, filenames in os.walk(source_dir):

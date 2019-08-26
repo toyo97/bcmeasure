@@ -98,9 +98,7 @@ def process_cell(cs):
     #     plot.close()
 
 
-def process_img(root, filename):
-    tif_file = filename.replace('.marker', '')
-    img_path = os.path.join(root, tif_file)
+def process_img(img_path):
     IJ.log('Processing {} ...'.format(img_path))
 
     # open image
@@ -138,14 +136,39 @@ def process_img(root, filename):
             break
 
 
-if __name__ == '__main__':
-    # launch Fiji
-    ImageJ()
+def full_process():
     for root, directories, filenames in os.walk(source_dir):
         for filename in filenames:
             if filename.endswith('.marker'):
-                process_img(root, filename)
+                tif_file = filename.replace('.marker', '')
+                img_path = os.path.join(root, tif_file)
+
+                process_img(img_path)
+
                 raw_input('Press enter to continue...')
                 IJ.run("Close All")
 
     IJ.log('Finish')
+
+    """
+Particular images
+
+/home/zemp/bcfind_GT/SST_11_17.tif
+/home/zemp/bcfind_GT/SST_11_14.tif
+/home/zemp/bcfind_GT/SST_11_16.tif
+/home/zemp/bcfind_GT/SST_11_7.tif
+/home/zemp/bcfind_GT/SST_11_17.tif
+/home/zemp/bcfind_GT/GT_SST/03400_15600_1500.tif
+/home/zemp/bcfind_GT/GT_SST/02400_14600_1000.tif
+/home/zemp/bcfind_GT/GT_SST/04400_08500_1200.tif
+/home/zemp/bcfind_GT/GT_SST/14600_06450_0950.tif
+    """
+
+
+if __name__ == '__main__':
+    # launch Fiji
+    ImageJ()
+
+    full_process()
+
+    # process_img('/home/zemp/bcfind_GT/SST_11_17.tif')

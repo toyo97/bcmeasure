@@ -1,70 +1,53 @@
-import os
-
-from ij import IJ, ImagePlus, ImageStack
-from ij.plugin import filter, GaussianBlur3D, Zoom, Filters3D
-import markers as mrk
-from stacks import get_cells_vstacks
-
-xysigma = 2
-zsigma = 1
+from ij import IJ
+from ij.plugin import GaussianBlur3D, Filters3D
+from stacks import CellStack
 
 
-def gaussianIJ(stack, xysigma, zsigma):
-    # type: (ImageStack, float, float) -> ImagePlus
+def gaussianIJ(cs, xysigma):
+    # type: (CellStack, float) -> None
     """
-Perform ImageJ gaussian blur 3D with same sigma along x and y axes on a copy of the given ImageStack
+Perform ImageJ gaussian blur 3D with same sigma along x and y axes on a CellStack
     """
-    imp = ImagePlus('stack copy', stack.duplicate())
-    GaussianBlur3D.blur(imp, xysigma, xysigma, zsigma)
-    return imp.getImageStack()
+    zsigma = cs.scaleZ
+    GaussianBlur3D.blur(cs, xysigma, xysigma, zsigma)
 
 
-def medianIJ(stack, xysigma, zsigma):
-    # type: (ImageStack, float, float) -> ImageStack
+def medianIJ(cs, xysigma):
+    # type: (CellStack, float) -> None
     """
-Perform ImageJ median filter 3D with same sigma along x and y axes on a copy of the given ImageStack
+Perform ImageJ median filter 3D with same sigma along x and y axes on a CellStack (locally)
     """
-    new_stack = Filters3D.filter(stack, Filters3D.MEDIAN, xysigma, xysigma, zsigma)
-    return new_stack
+    stack = cs.getImageStack()
+    new_stack = Filters3D.filter(stack, Filters3D.MEDIAN, xysigma, xysigma, xysigma * cs.scaleZ)
+    cs.setStack(new_stack)
 
 
-def meanIJ(stack, xysigma, zsigma):
-    # type: (ImageStack, float, float) -> ImageStack
+def meanIJ(cs, xysigma):
+    # type: (CellStack, float) -> None
     """
-Perform ImageJ mean filter 3D with same sigma along x and y axes on a copy of the given ImageStack
+Perform ImageJ mean filter 3D with same sigma along x and y axes on a CellStack (locally)
     """
-    new_stack = Filters3D.filter(stack, Filters3D.MEAN, xysigma, xysigma, zsigma)
-    return new_stack
+    stack = cs.getImageStack()
+    new_stack = Filters3D.filter(stack, Filters3D.MEAN, xysigma, xysigma, xysigma * cs.scaleZ)
+    cs.setStack(new_stack)
 
 
-# filter testing
-if __name__ == '__main__':
-    img_path = '/home/zemp/bcfind_GT/SST_11_12.tif'
-    img_name, img_ext = os.path.splitext(img_path)
-    marker_path = img_name + '.csv'
+def filter_cellstack(cs, method, sigma):
+    # type: (CellStack, str, float) -> None
+    """
+Perform the requested filter
 
-    imp = IJ.openImage(img_path)
-    imp.show()
+    :param cs: CellStack
 
-    markers = mrk.read_marker(marker_path, to_int=True)
+    :param method: name of filter, can be 'gauss', 'mean' or 'median'
 
-    cells_vstacks = get_cells_vstacks(imp.getImageStack(), markers, 70, 0.4)
-    for vstack in cells_vstacks:
-        cell_imp = ImagePlus('Cell at {}'.format(vstack.get_center()), vstack)
-        cell_imp.setSlice(int(vstack.getSize() / 2))
-        cell_imp.show()
-        IJ.run("Set... ", "zoom=600")
-
-        # stack = ImageStack(vstack.width, vstack.height, vstack.getSize())
-        # for i in range(1, vstack.getSize() + 1):
-        #     stack.addSlice(vstack.getProcessor(i))
-
-        new_stack = gaussianIJ(vstack, xysigma, zsigma)
-        new_imp = ImagePlus('[blur3d] Cell at {}'.format(vstack.get_center()), new_stack)
-        new_imp.setSlice(int(vstack.getSize() / 2))
-        new_imp.show()
-        IJ.run("Set... ", "zoom=600")
-
-        raw_input('Press enter to continue...')
-        cell_imp.close()
-        new_imp.close()
+    :param sigma: sigma value along xy axis (on the z axis it is self-computed using CellStack z scale value)
+    """
+    if method == 'gauss':
+        gaussianIJ(cs, sigma)
+    elif method == 'mean':
+        meanIJ(cs, sigma)
+    elif method == 'median':
+        medianIJ(cs, sigma)
+    else:
+        IJ.error('Filter not valid: ' + method + '\nImage not filtered')

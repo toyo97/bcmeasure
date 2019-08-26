@@ -13,6 +13,8 @@ TODOs:
 
 from __future__ import with_statement, print_function
 import os
+
+from java.awt import Color
 from ij import IJ, ImagePlus, ImageJ
 from ij.gui import PointRoi
 import markers as mrk
@@ -121,7 +123,10 @@ def process_img(root, filename):
 
         # identify cell in original image
         imp.setSlice(cs.seed[2] + 1)
-        imp.setRoi(PointRoi(cs.seed[0], cs.seed[1]))
+        point = PointRoi(cs.seed[0], cs.seed[1])
+        point.setSize(3)
+        point.setColor(Color.RED)
+        imp.setRoi(point)
 
         process_cell(cs)
 

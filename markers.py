@@ -4,7 +4,7 @@ import os
 from ij import IJ
 
 
-def invert_y(y, height=150):
+def invert_y(y, height):
     return str(height - int(float(y)))
 
 
@@ -12,11 +12,11 @@ def read_marker(marker_path, y_inv_height=None, to_int=False):
     # type: (str, int, bool) -> list
     """
 Read a marker file (any extension) and return the feature of interests (x, y, z) in a list of rows
+
     :param marker_path: Absolute path to the marker file
 
     :param y_inv_height: Height of the image to invert upside-down the y coord (only if y inversion needed)
 
-    # TODO check if better to_int or to_float/double
     :param to_int: True returns coordinates as int type instead of str
 
     :return: Rows containing the coordinates (list of lists)
@@ -50,6 +50,7 @@ def markers_to_csv(source_dir, target_dir=None, y_inv_height=None, extra_suff=''
     # type: (str, str, int, str) -> None
     """
 Convert *.marker files in *.csv extracting only the features of interest (i.e. x,y,z)
+
     :param source_dir: Source directory for the marker files
 
     :param target_dir: Target directory for the csv files (same as source if None)

@@ -2,6 +2,7 @@ from ij import IJ
 from ij.gui import OvalRoi, Plot
 from ij.plugin import LutLoader
 from ij.process import StackStatistics, LUT
+from mcib3d.image3d import ImageHandler
 
 import stacks
 
@@ -60,31 +61,19 @@ Reference at: https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mc
 
     :param r0: internal radius (if sphere cap it must be gt 0)
     """
+    cal = cs.getCalibration()
+    cal.pixelDepth = 1 / cs.scaleZ
 
-    scale_z = cs.scaleZ
-    ratio = 1 / scale_z
-    ratio2 = ratio ** 2
-    x = cs.center[0]
-    y = cs.center[1]
-    z = cs.center[2]
+    imh = ImageHandler.wrap(cs)
 
-    rz = int(r1 * scale_z)
+    if r0 == 0:
+        neigh = imh.getNeighborhoodSphere(cs.center[0], cs.center[1], cs.center[2], r1, r1, r1*cs.scaleZ)
+        mean = neigh.getMean()
+    else:
+        neigh = imh.getNeighborhoodLayer(cs.center[0], cs.center[1], cs.center[2], r0, r1)
+        mean = neigh.getMean()
 
-    total = 0
-    count = 0
-    for k in range(z - rz, z + rz + 1):
-        for j in range(y - r1, y + r1 + 1):
-            for i in range(x - r1, x + r1 + 1):
-                if cs.contains([i, j, k]):
-                    dist = (x - i) ** 2 + (y - j) ** 2 + ((z - k) ** 2 * ratio2)
-                    if r1 ** 2 >= dist >= r0 ** 2:
-                        total += cs.get_voxel([i, j, k])
-                        count += 1
-
-    if count == 0:
-        IJ.error("Division by zero in neighborhood_mean().\nSee at {}".format(cs.title))
-        count = 1
-    return total / count
+    return mean
 
 
 def local_mean(cellstack, r0, r1, weight=0.5):

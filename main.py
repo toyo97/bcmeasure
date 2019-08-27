@@ -15,7 +15,7 @@ from __future__ import with_statement, print_function
 import os
 
 from java.awt import Color
-from ij import IJ, ImagePlus, ImageJ
+from ij import IJ, ImageJ
 from ij.gui import PointRoi
 import markers as mrk
 import stacks
@@ -112,6 +112,7 @@ def process_img(img_path):
     marker_path = img_name + '.csv'
 
     if not os.path.exists(marker_path):
+        root = os.path.dirname(marker_path)
         IJ.log('Creating corrected CSV files in {}...'.format(root))
         mrk.markers_to_csv(root, y_inv_height=imp.height)
 

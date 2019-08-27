@@ -76,8 +76,8 @@ Reference at: https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mc
     return mean
 
 
-def local_mean(cellstack, r0, r1, weight=0.5):
-    # type: (stacks.CellStack, int, int, float) -> float
+def local_mean(cellstack, r0, r1, r2, weight=0.5):
+    # type: (stacks.CellStack, int, int, int, float) -> float
     """
 Calculate a threshold value computing the center/background mean and weighting the sum
 Reference at: https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mcib3d/image3d/Segment3DSpots.java
@@ -94,7 +94,7 @@ Reference at: https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mc
     """
     mspot = neighborhood_mean(cellstack, r0)
     print('Mean spot: ' + str(mspot))
-    mback = neighborhood_mean(cellstack, r1, r0)
+    mback = neighborhood_mean(cellstack, r2, r1)
     print('Mean back: ' + str(mback))
     return mspot * weight + (1 - weight) * mback
 

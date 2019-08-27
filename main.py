@@ -33,9 +33,10 @@ scaleZ = 0.4  # approx proportion with xy axis
 recenter = True
 
 # local mean params
-r0 = 15
-r1 = 50
-meanw = 0.6
+r0 = 13
+r1 = 18
+r2 = 50
+meanw = 0.4
 
 # filter params
 method = 'gauss'
@@ -67,7 +68,7 @@ def process_cell(cs):
     if recenter:
         cs.center = loc_max
 
-    loc_mean = utils.local_mean(cs, r0=r0, r1=r1, weight=meanw)
+    loc_mean = utils.local_mean(cs, r0=r0, r1=r1, r2=r2,  weight=meanw)
     IJ.log('Local mean: ' + str(loc_mean))
 
     tab = utils.radial_distribution_3D(cs, max_rad=max_rad)

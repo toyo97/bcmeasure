@@ -3,6 +3,8 @@ from ij.gui import OvalRoi, Plot
 from ij.plugin import LutLoader
 from ij.process import StackStatistics, LUT
 from mcib3d.image3d import ImageHandler
+from mcib3d.image3d.processing import MaximaFinder
+from java.awt import Color
 
 import stacks
 
@@ -61,9 +63,6 @@ Reference at: https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mc
 
     :param r0: internal radius (if sphere cap it must be gt 0)
     """
-    cal = cs.getCalibration()
-    cal.pixelDepth = 1 / cs.scaleZ
-
     imh = ImageHandler.wrap(cs)
 
     if r0 == 0:
@@ -153,17 +152,41 @@ Apply a different Look Up Table according to the given cmap name
     ll = LutLoader()
     if cmap == 'fire':
         cm = ll.open('luts/fire.lut')
+        # print("Stats.max " + str(stats.max))
         lut = LUT(cm, stats.min, stats.max)
         cs.setLut(lut)
     else:
         IJ.error('Invalid color map: ' + cmap + '\nDefault LUT applied')
 
 
-def circle_roi(cs, r):
-    # type: (stacks.CellStack, int) -> None
+def circle_roi(cs, r, color):
+    # type: (stacks.CellStack, int, Color) -> None
     """
 Draw a circle roi with center and radius of the cell
     """
     d = r * 2
     x, y = cs.center[0] - r, cs.center[1] - r
-    cs.setRoi(OvalRoi(x, y, d, d))
+    roi = OvalRoi(x, y, d, d)
+    roi.setColor(color)
+    cs.setRoi(roi)
+
+
+def find_maxima(cs, rad, nt):
+    # type: (CellStack, int, float) -> list
+
+    imh = ImageHandler.wrap(cs.duplicate())
+    radXY = rad
+    radZ = rad * cs.scaleZ
+
+    mf = MaximaFinder(imh, radXY, radZ, nt)
+    peaks_array = mf.getListPeaks()
+    peaks = []
+    # check toArray() call functioning
+    for p in peaks_array.toArray():
+        point = p.getPosition()
+        peaks.append([l for l in point.getArray()])
+
+    peaks_list = list(map(lambda x: [int(i) for i in x], peaks))
+    peaks_list.append(cs.center)
+    return peaks_list
+

@@ -23,6 +23,7 @@ import utils
 from filters import filter_cellstack
 
 # inputs
+from mean_shift import ms_center
 from utils import apply_lut, circle_roi
 
 source_dir = '/home/zemp/bcfind_GT'
@@ -35,16 +36,19 @@ recenter = True
 # local mean params
 r0 = 13
 r1 = 18
-r2 = 50
+r2 = 40
 meanw = 0.4
 
 # filter params
-method = 'gauss'
+method = 'none'
 sigma = 2
 
 # 3d radial distribution
 max_rad = 40
 plot_rad3d = True
+
+# maxima param
+noise_tol = 0
 
 # lut (alternatives: fire, default)
 cmap = 'fire'
@@ -55,6 +59,7 @@ circle = True
 
 def process_cell(cs):
     IJ.log('Cell at {}'.format(cs.center))
+    cs.set_calibration()
 
     # filter the image
     if method != 'none':
@@ -76,6 +81,24 @@ def process_cell(cs):
     radius = utils.radius_thresh(tab, loc_mean)
     IJ.log('Radius: ' + str(radius))
 
+    # find local maxima
+    peaks = utils.find_maxima(cs, radius, loc_mean)
+
+    # run mean shift with those maxima
+    centroid = ms_center(cs, radius, peaks, sigma)
+
+    # update the centroid
+    cs.center = centroid
+
+    # apply local_mean thresh to radial distribution
+    new_loc_mean = utils.local_mean(cs, r0=radius-2, r1=radius+2, r2=r2,  weight=meanw)
+    IJ.log('New local mean: ' + str(new_loc_mean))
+
+    new_tab = utils.radial_distribution_3D(cs, max_rad=max_rad)
+
+    new_radius = utils.radius_thresh(new_tab, new_loc_mean)
+    IJ.log('New radius: ' + str(new_radius))
+
     # apply a different look up table for display
     if cmap != 'default':
         apply_lut(cs, cmap)
@@ -84,7 +107,14 @@ def process_cell(cs):
     cs.setSlice(cs.center[2] + 1)
 
     if circle:
-        circle_roi(cs, radius)
+        # circle_roi(cs, radius, Color.YELLOW)
+        circle_roi(cs, new_radius, Color.RED)
+
+    # draw point for new centroid
+    # point = PointRoi(cs.center[0], cs.center[1])
+    # point.setSize(2)
+    # point.setColor(Color.RED)
+    # cs.setRoi(point)
 
     cs.show()
     w = cs.getWindow()
@@ -171,6 +201,7 @@ if __name__ == '__main__':
     # launch Fiji
     ImageJ()
 
-    full_process()
+    # full_process()
 
-    # process_img('/home/zemp/bcfind_GT/SST_11_17.tif')
+    process_img('/home/zemp/bcfind_GT/SST_11_14.tif')
+

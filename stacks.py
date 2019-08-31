@@ -130,7 +130,7 @@ ImagePlus containing one cell as stack
             self.center = stats['loc_max']
 
         # compute weighted local mean to find a thresh value
-        stats['loc_mean'] = utils.local_mean(self, 20, 50, weight)
+        stats['loc_mean'] = utils.local_mean(self, 10, 18, 40, weight)
 
         # compute 3D radial distribution
         tab = utils.radial_distribution_3D(self, 40)
@@ -141,6 +141,11 @@ ImagePlus containing one cell as stack
         stats['radius'] = radius
 
         return stats
+
+    def set_calibration(self):
+        cal = self.getCalibration()
+        cal.pixelDepth = 1 / self.scaleZ
+
 
 
 

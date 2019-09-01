@@ -82,7 +82,7 @@ The kernel used is Gaussian Kernel.
                     # see https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mcib3d/geom/Voxel3D.java
 
                     neigh_pos = [p for p in neighbor.getPosition().getArray()]
-                    distance = point_x.distance(neighbor)
+                    distance = point_x.distance(neighbor, 1, cs.scaleZ)
                     weight = gaussian_kernel(distance, sigma)
                     inc = list(map(lambda n: n*(weight * neighbor.getValue()), neigh_pos))
                     numerator = list(map(lambda a, b: a+b, numerator, inc))

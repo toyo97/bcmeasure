@@ -22,6 +22,12 @@ def mean_shift(cs, radius, peaks, sigma, thresh):
     # copy peaks list
     X = list(peaks)
 
+    # use only peaks close to the cell
+    # TODO test this method
+    for x in X:
+        if euclid_distance(x, cs.center, cs.scaleZ) > radius:
+            X.remove(x)
+
     past_X = []
     n_iterations = 20
     for it in range(n_iterations):

@@ -41,7 +41,7 @@ meanw = 0.4
 
 # filter params
 method = 'none'
-sigma = 2
+sigma = 10
 
 # 3d radial distribution
 max_rad = 40
@@ -83,9 +83,12 @@ def process_cell(cs):
 
     # find local maxima
     peaks = utils.find_maxima(cs, radius, loc_mean)
+    IJ.log('Peaks: ' + str(peaks))
 
     # run mean shift with those maxima
-    centroid = ms_center(cs, radius, peaks, sigma)
+    IJ.log('Applying mean shift...')
+    centroid = ms_center(cs, radius, peaks, sigma, loc_mean)
+    IJ.log('New center: ' + str(centroid))
 
     # update the centroid
     cs.center = centroid
@@ -158,7 +161,10 @@ def process_img(img_path):
         point.setColor(Color.RED)
         imp.setRoi(point)
 
-        process_cell(cs)
+        if not cs.onBorder:
+            process_cell(cs)
+        else:
+            IJ.log('Skipped on border cell in seed ' + str(cs.seed))
 
         c = raw_input("Press enter to show the next cell or 'n' to go to the next image\n")
 

@@ -42,9 +42,13 @@ Create a dict for rapid access to stack dimensions
     imp_height = dimensions[1]
     imp_depth = dimensions[3]
 
-    w = dim if x0 + dim - 1 < imp_width else imp_width - x0
-    h = dim if y0 + dim - 1 < imp_height else imp_height - y0
-    d = int(dim * scaleZ) if z0 + int(dim * scaleZ) - 1 < imp_depth else imp_depth - z0
+    x1 = min(xc + int(dim / 2), imp_width)
+    y1 = min(yc + int(dim / 2), imp_height)
+    z1 = min(zc + int(dim * scaleZ / 2), imp_depth)
+
+    w = x1 - x0
+    h = y1 - y0
+    d = z1 - z0
     # z0 is the z coordinate, NOT the slice (slices go from 1 to stack size)
 
     roi = {

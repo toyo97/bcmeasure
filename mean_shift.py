@@ -14,8 +14,8 @@ def gaussian_kernel(distance, bandwidth):
     return val
 
 
-def mean_shift(cs, radius, peaks, sigma):
-    # type: (CellStack, int, list, float) -> list
+def mean_shift(cs, radius, peaks, sigma, thresh):
+    # type: (CellStack, int, list, float, float) -> list
 
     imh = ImageHandler.wrap(cs)
 
@@ -23,7 +23,7 @@ def mean_shift(cs, radius, peaks, sigma):
     X = list(peaks)
 
     past_X = []
-    n_iterations = 10
+    n_iterations = 20
     for it in range(n_iterations):
         for i, x in enumerate(X):
             point_x = Point3D(x[0], x[1], x[2])
@@ -37,17 +37,18 @@ def mean_shift(cs, radius, peaks, sigma):
             neigh_arr = neighbors.toArray()
 
             for neighbor in neigh_arr:
-                # TODO discard neighbors below certain thresh
+                # discard neighbors below certain thresh
+                if neighbor.getValue() >= thresh:
 
-                # neighbor is a Voxel3D Object, getPosition is a Point3D. For reference,
-                # see https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mcib3d/geom/Voxel3D.java
+                    # neighbor is a Voxel3D Object, getPosition is a Point3D. For reference,
+                    # see https://github.com/mcib3d/mcib3d-core/blob/master/src/main/java/mcib3d/geom/Voxel3D.java
 
-                neigh_pos = [p for p in neighbor.getPosition().getArray()]
-                distance = point_x.distance(neighbor)
-                weight = gaussian_kernel(distance, sigma)
-                inc = list(map(lambda n: n*(weight * neighbor.getValue()), neigh_pos))
-                numerator = list(map(lambda a, b: a+b, numerator, inc))
-                denominator += weight*neighbor.getValue()
+                    neigh_pos = [p for p in neighbor.getPosition().getArray()]
+                    distance = point_x.distance(neighbor)
+                    weight = gaussian_kernel(distance, sigma)
+                    inc = list(map(lambda n: n*(weight * neighbor.getValue()), neigh_pos))
+                    numerator = list(map(lambda a, b: a+b, numerator, inc))
+                    denominator += weight*neighbor.getValue()
 
             # print("Denominator: " + str(denominator))
             new_x = list(map(lambda n: int(n/denominator), numerator))
@@ -59,16 +60,14 @@ def mean_shift(cs, radius, peaks, sigma):
 
     return X
 
-# TODO reject maxima below threshold
 
+def ms_center(cs, radius, peaks, sigma, thresh):
+    # type: (CellStack, int, list, float, float) -> list
 
-def ms_center(cs, radius, peaks, sigma):
-    # type: (CellStack, int, list, float) -> list
-
-    centroids = mean_shift(cs, radius, peaks, sigma)
+    print('[msc] Peaks: ' + str(peaks))
+    centroids = mean_shift(cs, radius, peaks, sigma, thresh)
+    print('[msc] Centroids: ' + str(centroids))
     dist = list(map(lambda x: euclid_distance(x, cs.center, cs.scaleZ), centroids))
-    # print("Centroids: " + str(centroids))
-    # print("Center: " + str(cs.center))
     min_d = min(dist)
     index = 0
     for i, d in enumerate(dist):

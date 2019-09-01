@@ -1,7 +1,5 @@
 from ij import ImagePlus
 
-import utils
-
 
 def gen_cell_stacks(imp, seeds, cube_dim, scaleZ=1.0):
     """
@@ -73,7 +71,7 @@ class CellStack(ImagePlus):
     def __init__(self, imp, xc, yc, zc, dim, scaleZ=1.):
         # type: (ImagePlus, int, int, int, int, float) -> CellStack
         """
-ImagePlus containing one cell as stack
+    ImagePlus containing one cell as stack
 
         :param imp: Original ImageJ ImagePlus
 
@@ -104,7 +102,14 @@ ImagePlus containing one cell as stack
         super(ImagePlus, self).__init__(title, stack)
 
     def contains(self, pos):
+        # type: (list) -> bool
+        """
+    Handy method to check if a 3D point is inside the cell stack
 
+        :param pos: Point to be checked
+
+        :return: True if the point is contained
+        """
         w = self.roi3D['width']
         h = self.roi3D['height']
         d = self.roi3D['depth']
@@ -115,34 +120,27 @@ ImagePlus containing one cell as stack
             return False
 
     def get_voxel(self, pos):
+        # type: (list) -> int
+        """
+    Random access to any voxel inside the cell stack
+
+        :param pos: 3D coordinates of the requested voxel
+
+        :return: Voxel intensity (int value)
+
+        :raise: IndexError if coordinates out of cell stack
+        """
         if self.contains(pos):
             self.setPosition(pos[2] + 1)
             return self.getPixel(pos[0], pos[1])[0]
         else:
             raise IndexError("3D coordinates out of bounds")
 
-    def get_stats(self, weight=0.5, recenter=True):
-
-        # find local max around seed (naive method)
-        stats = {'loc_max': utils.local_max(self, self.center)}
-
-        if recenter:
-            self.center = stats['loc_max']
-
-        # compute weighted local mean to find a thresh value
-        stats['loc_mean'] = utils.local_mean(self, 10, 18, 40, weight)
-
-        # compute 3D radial distribution
-        tab = utils.radial_distribution_3D(self, 40)
-        stats['rad3D'] = tab
-
-        # compute radius
-        radius = utils.radius_thresh(tab, stats['loc_mean'])
-        stats['radius'] = radius
-
-        return stats
-
     def set_calibration(self):
+        """
+    Set pixel depth value according to default value scaleZ
+    NOTE: to be clear, pixelDepth >= 1, scaleZ <= 1 (the latter is the proportion resZ/resXY -res := resolution-)
+        """
         cal = self.getCalibration()
         cal.pixelDepth = 1 / self.scaleZ
 

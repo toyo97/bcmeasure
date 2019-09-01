@@ -9,7 +9,9 @@ from ij.process import LUT, StackStatistics
 
 from filters import gaussianIJ, medianIJ, meanIJ
 from stacks import CellStack, gen_cell_stacks
-from utils import nearest_neighborhood, radius_thresh, radial_distribution_3D, local_max, local_mean
+from utils import local_max, local_mean
+from rad3d import radial_distribution_3D, radius_thresh
+from neigh import nearest_neighborhood
 
 
 def get_ra_pos(r):

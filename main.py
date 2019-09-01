@@ -17,15 +17,16 @@ import os
 from java.awt import Color
 from ij import IJ, ImageJ
 from ij.gui import PointRoi
+
 import markers as mrk
-import stacks
-import utils
+from rad3d import radius_thresh, radial_distribution_3D
+from stacks import gen_cell_stacks
+from utils import find_maxima, local_mean, local_max
 from filters import filter_cellstack
+from mean_shift import ms_center
+from display import apply_lut, circle_roi
 
 # inputs
-from mean_shift import ms_center
-from utils import apply_lut, circle_roi
-
 source_dir = '/home/zemp/bcfind_GT'
 cube_roi_dim = 70  # dim of cube as region of interest (ROI) around every cell center
 scaleZ = 0.4  # approx proportion with xy axis
@@ -71,25 +72,25 @@ def process_cell(cs):
         filter_cellstack(cs, method=method, sigma=sigma)
 
     # cell stats
-    loc_max = utils.local_max(cs, cs.center)
+    loc_max = local_max(cs, cs.center)
     IJ.log('Local max in {}, value: {}'.format(loc_max, cs.get_voxel(loc_max)))
 
     if recenter:
         cs.center = loc_max
 
-    loc_mean = utils.local_mean(cs, r0=r0, r1=r1, r2=r2,  weight=meanw)
+    loc_mean = local_mean(cs, r0=r0, r1=r1, r2=r2, weight=meanw)
     IJ.log('Local mean: ' + str(loc_mean))
 
-    tab = utils.radial_distribution_3D(cs, max_rad=max_rad)
+    tab = radial_distribution_3D(cs, max_rad=max_rad)
 
-    radius = utils.radius_thresh(tab, loc_mean)
+    radius = radius_thresh(tab, loc_mean)
     IJ.log('Radius: ' + str(radius))
 
-    # find local maxima
-    peaks = utils.find_maxima(cs, radius, loc_mean)
+    # find local maxima in the whole image, even those far from the cell center
+    peaks = find_maxima(cs, radius/2, loc_mean)
     IJ.log('Peaks: ' + str(peaks))
 
-    # run mean shift with those maxima
+    # run mean shift with maxima that are closer to the cell center
     IJ.log('Applying mean shift...')
     centroid = ms_center(cs, radius, peaks, ms_sigma, loc_mean)
     IJ.log('New center: ' + str(centroid))
@@ -98,12 +99,12 @@ def process_cell(cs):
     cs.center = centroid
 
     # apply local_mean thresh to radial distribution
-    new_loc_mean = utils.local_mean(cs, r0=radius-2, r1=radius+2, r2=r2,  weight=meanw)
+    new_loc_mean = local_mean(cs, r0=radius - 2, r1=radius + 2, r2=r2, weight=meanw)
     IJ.log('New local mean: ' + str(new_loc_mean))
 
-    new_tab = utils.radial_distribution_3D(cs, max_rad=max_rad)
+    new_tab = radial_distribution_3D(cs, max_rad=max_rad)
 
-    new_radius = utils.radius_thresh(new_tab, new_loc_mean)
+    new_radius = radius_thresh(new_tab, new_loc_mean)
     IJ.log('New radius: ' + str(new_radius))
 
     # apply a different look up table for display
@@ -156,7 +157,7 @@ def process_img(img_path):
 
     markers = mrk.read_marker(marker_path, to_int=True)
 
-    for cs in stacks.gen_cell_stacks(imp, markers, cube_roi_dim, scaleZ):
+    for cs in gen_cell_stacks(imp, markers, cube_roi_dim, scaleZ):
 
         # identify cell in original image
         imp.setSlice(cs.seed[2] + 1)

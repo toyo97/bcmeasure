@@ -41,7 +41,7 @@ meanw = 0.4
 
 # filter params
 method = 'none'
-sigma = 10
+sigma = 2
 
 # 3d radial distribution
 max_rad = 40
@@ -50,11 +50,15 @@ plot_rad3d = True
 # maxima param
 noise_tol = 0
 
+# mean shift param
+ms_sigma = 10  # gaussian kernel param
+
 # lut (alternatives: fire, default)
 cmap = 'fire'
 
 # display
 circle = True
+discard_margin_cells = False
 
 
 def process_cell(cs):
@@ -87,7 +91,7 @@ def process_cell(cs):
 
     # run mean shift with those maxima
     IJ.log('Applying mean shift...')
-    centroid = ms_center(cs, radius, peaks, sigma, loc_mean)
+    centroid = ms_center(cs, radius, peaks, ms_sigma, loc_mean)
     IJ.log('New center: ' + str(centroid))
 
     # update the centroid
@@ -161,10 +165,13 @@ def process_img(img_path):
         point.setColor(Color.RED)
         imp.setRoi(point)
 
-        if not cs.onBorder:
-            process_cell(cs)
+        if discard_margin_cells:
+            if not cs.onBorder:
+                process_cell(cs)
+            else:
+                IJ.log('Skipped on border cell in seed ' + str(cs.seed))
         else:
-            IJ.log('Skipped on border cell in seed ' + str(cs.seed))
+            process_cell(cs)
 
         c = raw_input("Press enter to show the next cell or 'n' to go to the next image\n")
 

@@ -171,20 +171,22 @@ Draw a circle roi with center and radius of the cell
     cs.setRoi(roi)
 
 
-def find_maxima(cs, rad, nt):
-    # type: (CellStack, int, float) -> list
+def find_maxima(cs, rad, thresh):
+    # type: (stacks.CellStack, int, float) -> list
 
     imh = ImageHandler.wrap(cs.duplicate())
     radXY = rad
     radZ = rad * cs.scaleZ
 
-    mf = MaximaFinder(imh, radXY, radZ, nt)
+    # in MaximaFinder thresh is the noise tolerance value
+    mf = MaximaFinder(imh, radXY, radZ, thresh)
     peaks_array = mf.getListPeaks()
     peaks = []
     # check toArray() call functioning
     for p in peaks_array.toArray():
-        point = p.getPosition()
-        peaks.append([l for l in point.getArray()])
+        if p.getValue() >= thresh:
+            point = p.getPosition()
+            peaks.append([l for l in point.getArray()])
 
     peaks_list = list(map(lambda x: [int(i) for i in x], peaks))
     peaks_list.append(cs.center)

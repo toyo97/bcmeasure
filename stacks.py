@@ -32,13 +32,9 @@ Create a dict for rapid access to stack dimensions
 
     :return: dict, Key values are: x0, y0, z0, width, height, depth
     """
-    x0 = xc - int(dim / 2)
-    y0 = yc - int(dim / 2)
-    z0 = zc - int(dim * scaleZ / 2)
-
-    x0 = x0 if x0 >= 0 else 0
-    y0 = y0 if y0 >= 0 else 0
-    z0 = z0 if z0 >= 0 else 0
+    x0 = max(xc - int(dim / 2), 0)
+    y0 = max(yc - int(dim / 2), 0)
+    z0 = max(zc - int(dim * scaleZ / 2), 0)
 
     # Returns the dimensions of this image (width, height, nChannels, nSlices, nFrames) as a 5 element int array
     dimensions = imp.getDimensions()

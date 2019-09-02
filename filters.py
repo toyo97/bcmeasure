@@ -8,7 +8,7 @@ def gaussianIJ(cs, xysigma):
     """
 Perform ImageJ gaussian blur 3D with same sigma along x and y axes on a CellStack
     """
-    zsigma = cs.scaleZ
+    zsigma = cs.scaleZ * xysigma
     GaussianBlur3D.blur(cs, xysigma, xysigma, zsigma)
 
 

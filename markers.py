@@ -42,7 +42,7 @@ Read a marker file (any extension) and return the feature of interests (x, y, z)
             except IndexError as e:
                 IJ.log('ERROR ' + str(e) + ' in file ' + marker_path)
 
-        IJ.log('Read {} rows from {}'.format(len(rows), marker_path))
+    IJ.log('Read {} rows from {}'.format(len(rows), marker_path))
     return rows
 
 

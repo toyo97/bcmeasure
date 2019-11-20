@@ -1,6 +1,8 @@
 # Brain Cell Measure
 _ImageJ script to measure radius of brain cells in 3D images_
 
+_DISCLAIMER: This repository is not updated. The updated version of the tool is in the [bcmeasurej]() repository, which is the same tool but written in pure Java_
+
 - [Description](#description)
 - [Algorithm](#algorithm)
 - [Sources](#sources)
